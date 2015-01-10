@@ -8,6 +8,7 @@ import (
   "io"
   "strings"
   "unicode"
+  "strconv"
 )
 
 type Publication struct {
@@ -110,8 +111,23 @@ type NGram struct {
   Words []string
 }
 
+func (n NGram) Hash() (string) {
+  s := []string{strconv.Itoa(n.Size)}
+  s := append(s, n.Words...)
+  return strings.Join(s, ".")
+}
+
 type MarkovMatrix struct {
-  Matrix map[NGram](map[NGram]float64)
+  Matrix map[string]map[string]float64
+}
+
+func (m MarkovMatrix) SetProbability(i, j NGram, prob float64) {
+  entry := m.Matrx[i.Hash()]
+  if (entry == nil) {
+    entry = make(map[string]float64)
+  }
+  entry[j.Hash()] = prob
+  m.Matrix[i.Hash()] = entry
 }
 
 type WordList struct {
