@@ -98,12 +98,35 @@ func (p PublicationBody) WordsIn(list WordList) (int) {
 }
 
 func (p PublicationBody) ConstructMarkovMatrix(ngramSize int) (MarkovMatrix) {
-  prevWords := make([]string, ngramSize)
+  prevNGram := NGram{ngramSize, []string{}}
+  matrix := CreateMarkovMatrix()
 
   for (p.HasNextWord()) {
     w := p.NextWord()
-    prevWords = append(prevWords, w)
+    newWords = append(prevNGram.Words, w)
+
+    if (len(newWords) == ngramSize + 1) {
+      ngram := NGram{ngramSize, newWords[1:]}
+      curCount := matrix.GetProbability(prevNGram, ngram)
+
+      matrix.SetProbability(prevNGram, ngram, curCount + 1.0)
+    }
   }
+
+  res := CreateMarkovMatrix()
+  for i := range matrix.Matrix {
+    total := 0.0
+
+    for j := range matrix.Matrix[i] {
+      total += matrix.Matrix[i][j]
+    }
+
+    for j := range matrix.Matrix[i] {
+      res.SetProbability(i, j, matrix.GetProbability(i, j) / total)
+    }
+  }
+
+  return res
 }
 
 type NGram struct {
@@ -121,6 +144,11 @@ type MarkovMatrix struct {
   Matrix map[string]map[string]float64
 }
 
+func CreateMarkovMatrix() (MarkovMatrix) {
+  m := make(map[string]map[string]float64)
+  return MarkovMatrix{m}
+}
+
 func (m MarkovMatrix) SetProbability(i, j NGram, prob float64) {
   entry := m.Matrx[i.Hash()]
   if (entry == nil) {
@@ -128,6 +156,15 @@ func (m MarkovMatrix) SetProbability(i, j NGram, prob float64) {
   }
   entry[j.Hash()] = prob
   m.Matrix[i.Hash()] = entry
+}
+
+func (m MarkovMatrix) GetProbability(i, j NGram) (float64) {
+  entry := m.Matrx[i.Hash()]
+  if (entry == nil) {
+    return 0.0
+  } else {
+    return entry[j.Hash()]
+  }
 }
 
 type WordList struct {
