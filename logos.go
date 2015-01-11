@@ -5,10 +5,13 @@ This program analyzes articles, identifying important elements in highly ranking
 */
 
 import (
+  "bufio"
   "io"
+  "ioutil"
   "strings"
   "unicode"
   "strconv"
+  "errors"
 )
 
 type Publication struct {
@@ -22,10 +25,66 @@ type PublicationBody interface {
   HasNextLine() (bool)
   NextWord() (string)
   HasNextWord() (bool)
-  io.Reader
-  io.Seeker
+  ResetSeeker()
 }
 
+type StringPublicationBody struct {
+  Lines []string
+  Words [][]string
+  CurrentLine int
+  CurrentWord int
+}
+
+func (s StringPublicationBody) HasNextLine() (bool) {
+  return len(s.Lines) > s.CurrentLine
+}
+
+func (s StringPublicationBody) NextLine() (string) {
+  res := s.Lines[s.CurrentLine]
+  s.CurrentLine++
+  return res
+}
+
+func (s StringPublicationBody) HasNextWord() (bool) {
+  if (len(s.Lines) <= s.CurrentLine) {
+    return false
+  }
+
+  return (len(s.Words[s.CurrentLine]) > s.CurrentWord) || (len(s.Lines) > s.CurrentLine + 1)
+}
+
+func (s StringPublicationBody) NextWord() (bool) {
+  word := s.Words[s.CurrentLine][s.CurrentWord]
+  if (len(s.Words[s.CurrentLine]) < s.CurrentWord + 1) {
+    s.CurrentLine++
+    s.CurrentWord = 0
+  }
+  return word
+}
+
+func (s StringPublicationBody) ResetSeeker() {
+  s.CurrentLine = 0
+  s.CurrentWord = 0
+}
+
+func CreateStringPubBody(input io.Reader) (StringPublicationBody, error) {
+  scanner := bufio.NewScanner(input)
+  lines := make([]string, 0)
+  words := make([][]string, 0)
+
+  for scanner.Scan() {
+    line := scanner.Text()
+    lines = append(lines, line)
+    words = append(words, splitWords(line))
+  }
+
+  return StringPublicationBody{
+    Lines: lines,
+    Words: words,
+    CurrentLine: 0,
+    Currentword: 0,
+  }
+}
 
 /*
 ---------------------------------------------------------------
