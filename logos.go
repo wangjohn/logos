@@ -97,18 +97,18 @@ func CreateStringPubBody(input io.Reader) (StringPublicationBody, error) {
 ---------------------------------------------------------------
 */
 
-func (p PublicationBody) WordCount() (int) {
+func (p StringPublicationBody) WordCount() (int) {
   count := 0
 
   for (p.HasNextWord()) {
-    l := p.NextWord()
+    p.NextWord()
     count++
   }
 
   return count
 }
 
-func (p PublicationBody) AverageWordsPerLine() (float64) {
+func (p StringPublicationBody) AverageWordsPerLine() (float64) {
   sum := 0
   count := 0
 
@@ -122,7 +122,7 @@ func (p PublicationBody) AverageWordsPerLine() (float64) {
   return float64(sum) / float64(count)
 }
 
-func (p PublicationBody) AverageWordLength() (float64) {
+func (p StringPublicationBody) AverageWordLength() (float64) {
   sum := 0
   count := 0
 
@@ -135,7 +135,7 @@ func (p PublicationBody) AverageWordLength() (float64) {
   return float64(sum) / float64(count)
 }
 
-func (p PublicationBody) WordsLongerThan(x int) (int) {
+func (p StringPublicationBody) WordsLongerThan(x int) (int) {
   count := 0
 
   for (p.HasNextWord()) {
@@ -148,7 +148,7 @@ func (p PublicationBody) WordsLongerThan(x int) (int) {
   return count
 }
 
-func (p PublicationBody) WordsIn(list WordList) (int) {
+func (p StringPublicationBody) WordsIn(list WordList) (int) {
   count := 0
 
   for (p.HasNextWord()) {
@@ -161,7 +161,7 @@ func (p PublicationBody) WordsIn(list WordList) (int) {
   return count
 }
 
-func (p PublicationBody) ConstructMarkovMatrix(ngramSize int) (MarkovMatrix) {
+func (p StringPublicationBody) ConstructMarkovMatrix(ngramSize int) (MarkovMatrix) {
   prevNGram := NGram{ngramSize, []string{}}
   matrix := CreateMarkovMatrix()
 
