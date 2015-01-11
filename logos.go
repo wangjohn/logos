@@ -35,17 +35,17 @@ type StringPublicationBody struct {
   CurrentWord int
 }
 
-func (s StringPublicationBody) HasNextLine() (bool) {
+func (s *StringPublicationBody) HasNextLine() (bool) {
   return len(s.Lines) > s.CurrentLine
 }
 
-func (s StringPublicationBody) NextLine() (string) {
+func (s *StringPublicationBody) NextLine() (string) {
   res := s.Lines[s.CurrentLine]
   s.CurrentLine++
   return res
 }
 
-func (s StringPublicationBody) HasNextWord() (bool) {
+func (s *StringPublicationBody) HasNextWord() (bool) {
   if (len(s.Lines) <= s.CurrentLine) {
     return false
   }
@@ -53,16 +53,18 @@ func (s StringPublicationBody) HasNextWord() (bool) {
   return (len(s.Words[s.CurrentLine]) > s.CurrentWord) || (len(s.Lines) > s.CurrentLine + 1)
 }
 
-func (s StringPublicationBody) NextWord() (string) {
+func (s *StringPublicationBody) NextWord() (string) {
   word := s.Words[s.CurrentLine][s.CurrentWord]
-  if (len(s.Words[s.CurrentLine]) < s.CurrentWord + 1) {
+  if (len(s.Words[s.CurrentLine]) <= s.CurrentWord + 1) {
     s.CurrentLine++
     s.CurrentWord = 0
+  } else {
+    s.CurrentWord++
   }
   return word
 }
 
-func (s StringPublicationBody) ResetSeeker() {
+func (s *StringPublicationBody) ResetSeeker() {
   s.CurrentLine = 0
   s.CurrentWord = 0
 }
