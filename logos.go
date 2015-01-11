@@ -1,3 +1,5 @@
+package logos
+
 /*
 Logos
 
@@ -7,11 +9,9 @@ This program analyzes articles, identifying important elements in highly ranking
 import (
   "bufio"
   "io"
-  "ioutil"
   "strings"
   "unicode"
   "strconv"
-  "errors"
 )
 
 type Publication struct {
@@ -53,7 +53,7 @@ func (s StringPublicationBody) HasNextWord() (bool) {
   return (len(s.Words[s.CurrentLine]) > s.CurrentWord) || (len(s.Lines) > s.CurrentLine + 1)
 }
 
-func (s StringPublicationBody) NextWord() (bool) {
+func (s StringPublicationBody) NextWord() (string) {
   word := s.Words[s.CurrentLine][s.CurrentWord]
   if (len(s.Words[s.CurrentLine]) < s.CurrentWord + 1) {
     s.CurrentLine++
@@ -74,16 +74,21 @@ func CreateStringPubBody(input io.Reader) (StringPublicationBody, error) {
 
   for scanner.Scan() {
     line := scanner.Text()
-    lines = append(lines, line)
-    words = append(words, splitWords(line))
+    lineWords := splitWords(line)
+
+    if (len(lineWords) > 0) {
+      lines = append(lines, line)
+      words = append(words, lineWords)
+    }
   }
 
-  return StringPublicationBody{
+  body := StringPublicationBody{
     Lines: lines,
     Words: words,
     CurrentLine: 0,
-    Currentword: 0,
+    CurrentWord: 0,
   }
+  return body, nil
 }
 
 /*
@@ -103,7 +108,7 @@ func (p PublicationBody) WordCount() (int) {
   return count
 }
 
-func (p PublicationBody) AverageWordsPerLine() (int) {
+func (p PublicationBody) AverageWordsPerLine() (float64) {
   sum := 0
   count := 0
 
@@ -114,10 +119,10 @@ func (p PublicationBody) AverageWordsPerLine() (int) {
     count++
   }
 
-  return float64(sum) / count
+  return float64(sum) / float64(count)
 }
 
-func (p PublicationBody) AverageWordLength() (int) {
+func (p PublicationBody) AverageWordLength() (float64) {
   sum := 0
   count := 0
 
@@ -127,7 +132,7 @@ func (p PublicationBody) AverageWordLength() (int) {
     count++
   }
 
-  return float64(sum) / count
+  return float64(sum) / float64(count)
 }
 
 func (p PublicationBody) WordsLongerThan(x int) (int) {
@@ -162,7 +167,7 @@ func (p PublicationBody) ConstructMarkovMatrix(ngramSize int) (MarkovMatrix) {
 
   for (p.HasNextWord()) {
     w := p.NextWord()
-    newWords = append(prevNGram.Words, w)
+    newWords := append(prevNGram.Words, w)
 
     if (len(newWords) == ngramSize + 1) {
       ngram := NGram{ngramSize, newWords[1:]}
@@ -181,7 +186,9 @@ func (p PublicationBody) ConstructMarkovMatrix(ngramSize int) (MarkovMatrix) {
     }
 
     for j := range matrix.Matrix[i] {
-      res.SetProbability(i, j, matrix.GetProbability(i, j) / total)
+      ig := HashToNGram(i)
+      jg := HashToNGram(j)
+      res.SetProbability(ig, jg, matrix.GetProbability(ig, jg) / total)
     }
   }
 
@@ -195,8 +202,14 @@ type NGram struct {
 
 func (n NGram) Hash() (string) {
   s := []string{strconv.Itoa(n.Size)}
-  s := append(s, n.Words...)
+  s = append(s, n.Words...)
   return strings.Join(s, ".")
+}
+
+func HashToNGram(hash string) (NGram) {
+  s := strings.Split(hash, ".")
+  size, _ := strconv.Atoi(s[0])
+  return NGram{size, s[1:]}
 }
 
 type MarkovMatrix struct {
@@ -209,7 +222,7 @@ func CreateMarkovMatrix() (MarkovMatrix) {
 }
 
 func (m MarkovMatrix) SetProbability(i, j NGram, prob float64) {
-  entry := m.Matrx[i.Hash()]
+  entry := m.Matrix[i.Hash()]
   if (entry == nil) {
     entry = make(map[string]float64)
   }
@@ -218,7 +231,7 @@ func (m MarkovMatrix) SetProbability(i, j NGram, prob float64) {
 }
 
 func (m MarkovMatrix) GetProbability(i, j NGram) (float64) {
-  entry := m.Matrx[i.Hash()]
+  entry := m.Matrix[i.Hash()]
   if (entry == nil) {
     return 0.0
   } else {
@@ -237,7 +250,7 @@ func ConstructWordList(words []string) (WordList) {
     list[w] = true
   }
 
-  return list
+  return WordList{list}
 }
 
 func (w WordList) Contains(word string) (bool) {
@@ -252,5 +265,5 @@ func splitWords(line string) ([]string) {
   f := func(c rune) bool {
     return unicode.IsPunct(c) || unicode.IsSpace(c)
   }
-  return strings.FieldsFunc(sentence, f)
+  return strings.FieldsFunc(line, f)
 }
